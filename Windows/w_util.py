@@ -1,6 +1,8 @@
 import subprocess
 from operator import index
 
+from scripts.regsetup import description
+
 
 class WinUser:
     def __init__(self, user_name = None,password = None,full_name =None,description = "None"):
@@ -62,33 +64,53 @@ class WinUser:
             if run.returncode == 0:
                 print(f"Successfully executed command {command}")
                 return run
+            else:
+                print(f"{run.stderr}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error: The user name could not be found.   Command: {e.cmd}  Return Code: {e.returncode}")
         except Exception as e:
-            print(e)
-
+            print(f"Error: {e} No Input Provided")
     # ['makeuser', 'john', '123', 'john', 'an', 'account']
     def parse_user_commad(self,command):
         pass
 
 
 print("Welcome to WinMan\n")
-print("Enter Commands below, example: makeuser[username password fullname description]\nmakeuser,admin,123,Administrator,An account with admin rights")
-print("Commands should be separated by a single comma")
+print("Enter Commands below, example: makeuser[username password fullname description]\nmakeuser admin 123 Administrator An account with admin rights")
+print("Commands should be separated by a space")
 user = WinUser()
 while True:
-    cinput = input("> ")
-    # will be changed to spaces later
-    usplit = cinput.split(",")
-    match usplit[0]:
+    cinput = input("> ").strip()
+    if cinput.lower() == "exit" or cinput == "quit":
+        exit(0)
+    user_input_split = cinput.split(" ")
+    final_trim = []
+    match user_input_split[0]:
         case "makeuser":
-            trimmed_result = [x.strip() for x in usplit if x.strip()]
-            user.user_name = trimmed_result[1]
-            user.password =  trimmed_result[2]
-            user.full_name = trimmed_result[3]
-            user.description = " ".join(trimmed_result[4])
-            user.create_account()
+            trimmed_result = [x.strip() for x in user_input_split if x.strip()]
+
+            if len(trimmed_result) < 5:
+                print("Error: Invalid input format. Please provide all required fields.")
+                continue
+            # Merge description into one string and construct final_trim
+            final_trim = trimmed_result[:4] + [" ".join(trimmed_result[4:])]
+            user.user_name = final_trim[1]
+            user.password = final_trim[2]
+            user.full_name = final_trim[3]
+            user.description = final_trim[4]
+            # user.create_account()
 
         case "delete_user":
-            user.delete_user(usplit[1])
+            try:
+                if len(user_input_split) > 2:
+                    print(f"Error: Invalid input format. Expect 2 items got {len(user_input_split)}")
+                    continue
+                user.delete_user(user_input_split[1])
+            except IndexError as e:
+                print(f"Error: No username was provided. {e}")
+
+            except Exception as e:
+                print(f"Error: {e}")
 
 
 
@@ -110,7 +132,7 @@ while True:
     commands = [concat_values[command] for command in range(2,len(concat_values),2)]
     
     """
-    pass
+
 
 
 
